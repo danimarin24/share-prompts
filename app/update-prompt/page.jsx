@@ -32,26 +32,33 @@ const EditPrompt = () => {
 
   const updatePrompt = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
 
-    if (!promptId) return toast.error('Prompt ID not found');
+    const regexExpHashtag = /^#[a-zA-Z]+/;
 
-    try {
-      const response = await fetch(`/api/prompt/${promptId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          prompt: post.prompt,
-          tag: post.tag,
-        }),
-      });
+    if (regexExpHashtag.test(post.tag)) {
+      setSubmitting(true);
 
-      if (response.ok) {
-        router.push('/');
+      if (!promptId) return toast.error('Prompt ID not found');
+
+      try {
+        const response = await fetch(`/api/prompt/${promptId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            prompt: post.prompt,
+            tag: post.tag,
+          }),
+        });
+
+        if (response.ok) {
+          router.push('/');
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setSubmitting(false);
       }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setSubmitting(false);
+    } else {
+      toast.error('Put a # at the beginning');
     }
   };
 

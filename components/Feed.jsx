@@ -19,20 +19,52 @@ const PromptCardList = ({ data, handleTagClick }) => {
 
 const Feed = () => {
   const [searchText, setSearchText] = useState('');
-  const [posts, setPosts] = useState([]);
+  const [searchTimeout, setSearchTimeout] = useState(null); // timeout to get the full searchText
+  const [allPosts, setAllPosts] = useState([]);
+  const [filteredPosts, setFilteredPosts] = useState([]);
 
-  const handleSearchChange = (e) => {};
+  const fetchAllPost = async () => {
+    const response = await fetch('/api/prompt');
+    const data = await response.json();
+
+    setAllPosts(data);
+  };
+
+  // get all filtered posts
+  const filterPrompts = (searchText) => {
+    const regexExp = new RegExp(searchText, 'i');
+    return allPosts.filter(
+      (item) =>
+        regexExp.test(item.creator.username) ||
+        regexExp.test(item.tag) ||
+        regexExp.test(item.prompt)
+    );
+  };
 
   useEffect(() => {
-    const fetchPost = async () => {
-      const response = await fetch('/api/prompt');
-      const data = await response.json();
-
-      setPosts(data);
-    };
-
-    fetchPost();
+    fetchAllPost();
   }, []);
+
+  const handleSearchChange = (e) => {
+    clearTimeout(searchTimeout);
+    setSearchText(e.target.value);
+
+    // debounce method
+    setSearchTimeout(
+      setTimeout(() => {
+        const searchResult = filterPrompts(e.target.value);
+        setFilteredPosts(searchResult);
+      }, 500)
+    );
+  };
+
+  const handleTagClick = (tag) => {
+    // setting the search input with the value
+    setSearchText(tag);
+    // and then filter the results
+    const searchResult = filterPrompts(tag);
+    setFilteredPosts(searchResult);
+  };
 
   return (
     <section className='feed'>
@@ -47,7 +79,11 @@ const Feed = () => {
         />
       </form>
 
-      <PromptCardList data={posts} handleTagClick={() => {}} />
+      {searchText ? (
+        <PromptCardList data={filteredPosts} handleTagClick={handleTagClick} />
+      ) : (
+        <PromptCardList data={allPosts} handleTagClick={handleTagClick} />
+      )}
     </section>
   );
 };

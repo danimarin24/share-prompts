@@ -2,13 +2,13 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import toast, { Toaster } from 'react-hot-toast';
 
 import Form from '@components/Form';
 
 const CreatePrompt = () => {
-
-	const router = useRouter();
-	const { data: session } = useSession();
+  const router = useRouter();
+  const { data: session } = useSession();
 
   const [submitting, setSubmitting] = useState(false);
   const [post, setPost] = useState({
@@ -19,36 +19,45 @@ const CreatePrompt = () => {
   const createPrompt = async (e) => {
     e.preventDefault();
 
-    setSubmitting(true);
+    const regexExpHashtag = /^#[a-zA-Z]+/;
 
-    try {
-      const response = await fetch('/api/prompt/new', {
-        method: 'POST',
-        body: JSON.stringify({
-          prompt: post.prompt,
-          userId: session?.user.id,
-          tag: post.tag,
-        }),
-      });
+    if (regexExpHashtag.test(post.tag)) {
+      setSubmitting(true);
 
-      if (response.ok) {
-        router.push('/');
+      try {
+        const response = await fetch('/api/prompt/new', {
+          method: 'POST',
+          body: JSON.stringify({
+            prompt: post.prompt,
+            userId: session?.user.id,
+            tag: post.tag,
+          }),
+        });
+
+        if (response.ok) {
+          router.push('/');
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setSubmitting(false);
       }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setSubmitting(false);
+    } else {
+      toast.error('Put a # at the beginning');
     }
   };
 
   return (
-    <Form
-      type='Create'
-      post={post}
-      setPost={setPost}
-      submitting={submitting}
-      handleSubmit={createPrompt}
-    />
+    <>
+      <Form
+        type='Create'
+        post={post}
+        setPost={setPost}
+        submitting={submitting}
+        handleSubmit={createPrompt}
+      />
+      <Toaster position='top-center' />
+    </>
   );
 };
 
