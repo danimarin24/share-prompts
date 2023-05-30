@@ -1,7 +1,8 @@
-'use client';
-import { useState, useEffect } from 'react';
+"use client";
 
-import PromptCard from './PromptCard';
+import { useState, useEffect } from "react";
+
+import PromptCard from "./PromptCard";
 
 const PromptCardList = ({ data, handleTagClick }) => {
   return (
@@ -18,32 +19,33 @@ const PromptCardList = ({ data, handleTagClick }) => {
 };
 
 const Feed = () => {
-  const [searchText, setSearchText] = useState('');
-  const [searchTimeout, setSearchTimeout] = useState(null); // timeout to get the full searchText
   const [allPosts, setAllPosts] = useState([]);
-  const [filteredPosts, setFilteredPosts] = useState([]);
 
-  const fetchAllPost = async () => {
-    const response = await fetch('/api/prompt');
+  // Search states
+  const [searchText, setSearchText] = useState("");
+  const [searchTimeout, setSearchTimeout] = useState(null);
+  const [searchedResults, setSearchedResults] = useState([]);
+
+  const fetchPosts = async () => {
+    const response = await fetch("/api/prompt");
     const data = await response.json();
 
     setAllPosts(data);
   };
 
-  // get all filtered posts
-  const filterPrompts = (searchText) => {
-    const regexExp = new RegExp(searchText, 'i');
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const filterPrompts = (searchtext) => {
+    const regex = new RegExp(searchtext, "i"); // 'i' flag for case-insensitive search
     return allPosts.filter(
       (item) =>
-        regexExp.test(item.creator.username) ||
-        regexExp.test(item.tag) ||
-        regexExp.test(item.prompt)
+        regex.test(item.creator.username) ||
+        regex.test(item.tag) ||
+        regex.test(item.prompt)
     );
   };
-
-  useEffect(() => {
-    fetchAllPost();
-  }, []);
 
   const handleSearchChange = (e) => {
     clearTimeout(searchTimeout);
@@ -53,17 +55,16 @@ const Feed = () => {
     setSearchTimeout(
       setTimeout(() => {
         const searchResult = filterPrompts(e.target.value);
-        setFilteredPosts(searchResult);
+        setSearchedResults(searchResult);
       }, 500)
     );
   };
 
-  const handleTagClick = (tag) => {
-    // setting the search input with the value
-    setSearchText(tag);
-    // and then filter the results
-    const searchResult = filterPrompts(tag);
-    setFilteredPosts(searchResult);
+  const handleTagClick = (tagName) => {
+    setSearchText(tagName);
+
+    const searchResult = filterPrompts(tagName);
+    setSearchedResults(searchResult);
   };
 
   return (
@@ -79,8 +80,12 @@ const Feed = () => {
         />
       </form>
 
+      {/* All Prompts */}
       {searchText ? (
-        <PromptCardList data={filteredPosts} handleTagClick={handleTagClick} />
+        <PromptCardList
+          data={searchedResults}
+          handleTagClick={handleTagClick}
+        />
       ) : (
         <PromptCardList data={allPosts} handleTagClick={handleTagClick} />
       )}
